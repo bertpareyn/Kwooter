@@ -1,7 +1,11 @@
 /* Uses the slack button feature to offer a real time bot to multiple teams */
 var Botkit = require('botkit');
+var MongoClient = require('mongodb').MongoClient
+var assert = require('assert');
+
 var controller = null;
 var skills = null;
+var db = null;
 
 /**
  * Validate the requirements for starting up the bot
@@ -13,12 +17,31 @@ var doStartupValidation = function() {
   }
 }
 
+var initDbConnection = function(callback) {
+  console.log("Setting up a connection to MongoDB");
+
+  var DB_USER = process.env.DB_USER;
+  var DB_PASSWORD = process.env.DB_PASSWORD;
+  var DB_URL = process.env.DB_URL;
+  var DB_PORT = process.env.DB_PORT;
+  var DB_NAME = process.env.DB_NAME;
+  // Connection URL 
+  var url = 'mongodb://' + DB_USER + ':' + DB_PASSWORD + '@' + DB_URL + ':' + DB_PORT + '/' + DB_NAME;
+  // Use connect method to connect to the Server 
+  MongoClient.connect(url, function(err, db) {
+    db = db;
+    assert.equal(null, err);
+    console.log("Connected successfully to MongoDB");
+    callback();
+  });
+}
+
 /**
  * Initialize the Botkit controller
  */
 var initController = function() {
   controller = module.exports.controller = Botkit.slackbot({
-    json_file_store: './db_slackbutton_bot/',
+    json_file_store: './db_quotebot/',
   }).configureSlackApp(
     {
       clientId: process.env.CLIENT_ID,
@@ -96,11 +119,11 @@ var initWebServer = function() {
 var initWebsockets = function() {
   // Handle events related to the websocket connection to Slack
   controller.on('rtm_open',function(bot) {
-    console.log('** The RTM api just connected!', bot);
+    console.log('** The RTM api just connected!');
   });
 
   controller.on('rtm_close',function(bot) {
-    console.log('** The RTM api just closed', bot);
+    console.log('** The RTM api just closed');
     // you may want to attempt to re-open
   });
 }
@@ -113,7 +136,7 @@ var initSkills = function() {
   var normalizedPath = require("path").join(__dirname, "skills") + "/";
   require("fs").readdirSync(normalizedPath).forEach(function(file) {
     // Load each skill and pass it the controller to further initialize with
-    var skill = require(normalizedPath + file.split('.js')[0])(controller);
+    var skill = require(normalizedPath + file.split('.js')[0])(controller, db);
     skill.bindSkills();
   });
 };
@@ -123,10 +146,12 @@ var initSkills = function() {
  */
 var initBot = function() {
   doStartupValidation();
-  initController();
-  initWebServer();
-  initWebsockets();
-  initSkills();
+  initDbConnection(function() {
+    initController();
+    initWebServer();
+    initWebsockets();
+    initSkills();
+  });
 };
 
 initBot();
