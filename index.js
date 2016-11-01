@@ -93,6 +93,18 @@ var initWebServer = function() {
   });
 };
 
+var initWebsockets = function() {
+  // Handle events related to the websocket connection to Slack
+  controller.on('rtm_open',function(bot) {
+    console.log('** The RTM api just connected!', bot);
+  });
+
+  controller.on('rtm_close',function(bot) {
+    console.log('** The RTM api just closed', bot);
+    // you may want to attempt to re-open
+  });
+}
+
 /**
  * Initialize the bot's skills
  */
@@ -113,6 +125,7 @@ var initBot = function() {
   doStartupValidation();
   initController();
   initWebServer();
+  initWebsockets();
   initSkills();
 };
 
