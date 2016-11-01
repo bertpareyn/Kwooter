@@ -7,7 +7,7 @@ var skills = null;
  * Validate the requirements for starting up the bot
  */
 var doStartupValidation = function() {
-  if (!process.env.clientId || !process.env.clientSecret || !process.env.port) {
+  if (!process.env.CLIENT_ID || !process.env.CLIENT_SECRET || !process.env.PORT) {
     console.log('Error: Specify clientId, clientSecret and port in environment');
     process.exit(1);
   }
@@ -21,9 +21,9 @@ var initController = function() {
     json_file_store: './db_slackbutton_bot/',
   }).configureSlackApp(
     {
-      clientId: process.env.clientId,
-      clientSecret: process.env.clientSecret,
-      scopes: ['bot'],
+      clientId: process.env.CLIENT_ID,
+      clientSecret: process.env.CLIENT_SECRET,
+      scopes: ['bot']
     }
   );
 };
@@ -33,7 +33,7 @@ var initController = function() {
  */
 var initWebServer = function() {
   // Set up the webserver
-  controller.setupWebserver(process.env.port,function(err,webserver) {
+  controller.setupWebserver(process.env.PORT, function(err,webserver) {
     controller.createWebhookEndpoints(controller.webserver);
 
     controller.createOauthEndpoints(controller.webserver,function(err,req,res) {
